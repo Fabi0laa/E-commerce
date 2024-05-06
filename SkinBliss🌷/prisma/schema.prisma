@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum SkinType {
+  oily
+  dry
+  combination
+  sensitive
+  acne_prone_skin
+  dry_acne_prone_skin
+  hiperpigmentation
+  not_specified
+}
+
+model User {
+  id                   Int           @id @default(autoincrement())
+  email                String        @unique
+  password             String
+  passwordConfirm      String
+  name                 String
+  surname              String
+  phone                String
+  role                 Role          @default(user)
+  active               Boolean       @default(true)
+  skinType             SkinType      @default(not_specified)
+  passwordChangedAt    DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  shoppingCart         ShoppingCart?
+  // orders               Orders[]
+  reviews              Reviews[]
+  // Orders               Orders?
+}
+
+model Address {
+  id          Int    @id @default(autoincrement())
+  address     String
+  city        String
+  postal_code String
+  // orders      Orders[]
+  // Orders      Orders?
+}
+
+model Brand {
+  id      Int       @id @default(autoincrement())
+  name    String
+  photo   String
+  desc    String
+  product Product[]
+}
+
+model Category {
+  id      Int       @id @default(autoincrement())
+  name    String
+  photo   String
+  desc    String
+  product Product[]
+}
+
+model Product {
+  id          Int           @id @default(autoincrement())
+  name        String
+  photo       String
+  desc        String
+  price       Float
+  stock       Int
+  brandId     Int
+  active      Boolean
+  brand       Brand         @relation(fields: [brandId], references: [id])
+  categoryId  Int
+  category    Category      @relation(fields: [categoryId], references: [id])
+  cartProduct CartProduct[]
+  skinType    SkinType
+  reviews     Reviews[]
+}
+
+model ShoppingCart {
+  id           Int           @id @default(autoincrement())
+  userId       Int           @unique
+  user         User          @relation(fields: [userId], references: [id])
+  cartProducts CartProduct[]
+}
+
+model CartProduct {
+  shoppingCartId Int
+  shoppingCart   ShoppingCart @relation(fields: [shoppingCartId], references: [id])
+  productId      Int
+  quantity       Int
+  product        Product      @relation(fields: [productId], references: [id])
+
+  @@id([shoppingCartId, productId])
+  @@unique([shoppingCartId, productId])
+}
+
+// model Orders {
+//   id        Int            @id @default(autoincrement())
+//   userId    Int            @unique
+//   user      User           @relation(fields: [userId], references: [id])
+//   addressId Int            @unique
+//   address   Address        @relation(fields: [addressId], references: [id])
+//   price     Float
+//   quantity  Int
+//   createdAt DateTime       @default(now())
+//   products  OrderProduct[]
+// }
+
+// model OrderProduct {
+//   id      Int    @id @default(autoincrement())
+//   orderId Int    @unique
+//   order   Orders @relation(fields: [orderId], references: [id])
+// }
+
+model Reviews {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  review    String
+  rating    Int
+  createdAt DateTime @default(now())
+}
